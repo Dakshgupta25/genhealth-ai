@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # GenHealth AI — Generational Health Intelligence Platform
 
 A full-stack AI-powered health platform that uses multi-generational family health data to predict, prevent, and personalize healthcare journeys.
@@ -178,3 +179,4 @@ backend/
 ## License
 
 MIT
+=======
