@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenHealth AI — Generational Health Intelligence</title>
+  <meta name="description" content="GenHealth AI uses your family health history and personal records to predict, prevent, and personalize your healthcare journey across generations.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+  <!-- LOGIN SCREEN (Acts as container for login/signup/onboarding fragments) -->
+  <div id="login-screen" class="screen active">
+    <!-- Loaded Dynamically by app.js -->
+  </div>
+
+  <!-- APP SHELL -->
+  <div id="app-shell">
+    <aside id="sidebar">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C8 2 6 6 6 10C6 12 7 14 9 15L9 19C9 20 10 21 12 21C14 21 15 20 15 19L15 15C17 14 18 12 18 10C18 6 16 2 12 2Z" fill="white" opacity="0.9"/>
+            <circle cx="9" cy="10" r="1.5" fill="rgba(0,196,154,0.9)"/>
+            <circle cx="15" cy="10" r="1.5" fill="rgba(0,196,154,0.9)"/>
+          </svg>
+        </div>
+        <div class="logo-text">GenHealth AI<span>Health Intelligence</span></div>
+      </div>
+      <nav>
+        <button class="nav-item active" onclick="app.navigateTo('dashboard')" data-page="dashboard"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span class="nav-label">Dashboard</span></button>
+        <button class="nav-item" onclick="app.navigateTo('records')" data-page="records"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span class="nav-label">Records</span></button>
+        <button class="nav-item" onclick="app.navigateTo('upload')" data-page="upload"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span><span class="nav-label">Upload</span></button>
+        <button class="nav-item" onclick="app.navigateTo('risk')" data-page="risk"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg></span><span class="nav-label">Risk Analysis</span></button>
+        <button class="nav-item" onclick="app.navigateTo('family')" data-page="family"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="nav-label">Family Health</span></button>
+        <button class="nav-item" onclick="app.navigateTo('recommendations')" data-page="recommendations"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="nav-label">Recommendations</span></button>
+        <button class="nav-item" onclick="app.navigateTo('doctor')" data-page="doctor"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="nav-label">Doctor Portal</span></button>
+        <button class="nav-item" onclick="app.navigateTo('settings')" data-page="settings"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nav-label">Settings</span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="nav-item" onclick="app.handleLogout()"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></button>
+      </div>
+    </aside>
+
+    <div id="main-wrapper">
+      <header id="header">
+        <div class="header-search">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search medical history..." oninput="records.handleSearch(this.value)">
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" aria-label="Notifications"><span class="notif-dot"></span>🔔</button>
+          <div class="user-avatar" id="userAvatarHeader" onclick="app.navigateTo('settings')">US</div>
+        </div>
+      </header>
+
+      <main id="content-area">
+        
+        <!-- DASHBOARD VIEW -->
+        <div id="page-dashboard" class="page">
+          <div class="greeting-section">
+            <h2 class="greeting-text" id="greetingText">Hello 👋</h2>
+            <div class="greeting-date" id="currentDate">Date</div>
+          </div>
+          <div class="dashboard-top">
+            <div class="health-score-card">
+              <div class="health-score-label">My Health Score</div>
+              <div class="gauge-container" id="healthGaugeDashboard">
+                <!-- SVG gauge goes here -->
+              </div>
+              <div class="health-score-status">Moderate Standing</div>
+              <div class="health-score-desc">Based on 4 processed medical documents and hereditary risks.</div>
+            </div>
+            <div class="risk-overview-card">
+              <div class="risk-card-title">Top Disease Risks</div>
+              <div style="font-size:12px; color:var(--color-muted); margin-bottom:10px;">Surfaced by GenHealth AI predictive models</div>
+              <div id="dashboardRiskList" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Filled dynamically -->
+              </div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card" style="padding:24px;">
+              <div class="section-header">
+                <div><div class="section-title">Timeline Updates</div><div class="section-subtitle">Latest changes in your records</div></div>
+                <button class="see-all-btn" onclick="app.navigateTo('records')">View All</button>
+              </div>
+              <div class="timeline" id="dashboardTimeline">
+                <!-- Filled dynamically -->
+              </div>
+            </div>
+            <div class="card" style="padding:24px; background:linear-gradient(135deg, var(--color-primary), #1a4a7a); color:#fff; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--color-accent); margin-bottom:16px;">Next Prevention Step</div>
+                <h3 style="font-family:var(--font-display); font-size:22px; font-weight:700; margin-bottom:8px; line-height:1.3;">Book Annual Diabetes HbA1c Screening</h3>
+                <p style="font-size:13px; color:rgba(255,255,255,0.75); line-height:1.5;">Your profile reflects a 62% diabetes risk score. Take a preventative test to monitor glycemic markers.</p>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px;">
+                <div><span style="font-size:11px; color:rgba(255,255,255,0.5);">Priority</span><br><span class="badge badge-high" style="font-size:10px;">Urgent</span></div>
+                <button class="btn btn-primary" onclick="app.navigateTo('recommendations')">Preventative Plan →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECORDS VIEW -->
+        <div id="page-records" class="page">
+          <div class="page-title">Health History</div>
+          <div class="page-subtitle">Search, filter and verify your electronic medical records</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div class="filter-chips" id="filterChips">
+              <button class="chip active" onclick="records.toggleFilter(this, 'all')">All Documents</button>
+              <button class="chip" onclick="records.toggleFilter(this, 'prescription')">💊 Prescriptions</button>
+              <button class="chip" onclick="records.toggleFilter(this, 'lab_report')">🧪 Lab Reports</button>
+            </div>
+            <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+              <input type="checkbox" id="includeFamilyCheck" onchange="records.toggleFamilyRecords(this)">
+              Include Family Records
+            </label>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr; gap:12px;" id="recordsList">
+            <!-- Skeleton or Records List -->
+          </div>
+        </div>
+
+        <!-- UPLOAD VIEW -->
+        <div id="page-upload" class="page">
+          <div class="page-title">Upload Health Record</div>
+          <div class="page-subtitle">Upload a prescription image or PDF to kick off AI OCR extraction</div>
+          
+          <div class="grid-2" style="margin-bottom: 24px;">
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="input-label" for="uploadRecordType">Document Type</label>
+              <select id="uploadRecordType" class="input-field">
+                <option value="prescription">Prescription</option>
+                <option value="lab_report">Lab Report / Blood Test</option>
+              </select>
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="input-label" for="uploadFamilyMember">Associate with Profile</label>
+              <select id="uploadFamilyMember" class="input-field">
+                <option value="">Personal Node (You)</option>
+                <!-- Dynamically filled by family members if loaded -->
+              </select>
+            </div>
+          </div>
+
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" style="display:none;" />
+            <div id="dropzoneContent">
+              <div class="upload-icon">📤</div>
+              <div class="upload-title">Drag & drop files here</div>
+              <div class="upload-sub">or click below to choose files from device</div>
+              <div style="display:flex; justify-content:center; gap:12px;">
+                <button class="btn btn-outline" id="selectFileBtn" type="button">Select File</button>
+                <button class="btn btn-outline" id="cameraBtn" type="button" aria-label="Open Camera">📸 Open Camera</button>
+              </div>
+              <div style="height:12px;"></div>
+              <div class="upload-formats">Supported files: <span>JPEG</span> <span>PNG</span> <span>PDF</span> up to 20MB</div>
+            </div>
+          </div>
+
+          <!-- Selected File Preview -->
+          <div id="uploadPreview" class="card" style="padding:24px; display:none; margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <img id="previewThumbnail" src="" alt="Thumbnail" style="width:60px; height:60px; object-fit:cover; border-radius:8px; display:none;">
+              <div style="flex:1;">
+                <div id="previewFileName" style="font-weight:600; font-size:14px;">filename.jpg</div>
+                <div style="font-size:12px; color:var(--color-muted);">File ready to upload.</div>
+              </div>
+              <button class="btn btn-danger" onclick="uploader.reset()" style="padding: 8px 12px; font-size:12px;">Clear</button>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="startUploadBtn" style="width:100%; display:none; height:48px;" disabled>Run AI Extraction →</button>
+
+          <!-- Celery Polling Progress State -->
+          <div class="processing-state card" id="processingState">
+            <div style="display:flex; justify-content:center;">
+              <svg class="dna-spinner" width="64" height="64" viewBox="0 0 80 80" fill="none">
+                <path d="M15 10 Q40 22 65 10" stroke="#00C49A" stroke-width="2.5" fill="none"/>
+                <path d="M15 30 Q40 42 65 30" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.75"/>
+                <path d="M15 50 Q40 62 65 50" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.5"/>
+              </svg>
+            </div>
+            <div class="processing-title" id="procStepNum">Step 1 of 5</div>
+            <div class="processing-sub" id="procStepMsg">Uploading document to storage...</div>
+            <div style="height:12px;"></div>
+            <div class="progress-bar" style="max-width: 320px; margin: 0 auto; height: 6px;">
+              <div class="progress-fill" id="uploadProgressBar" style="width: 0%; background: var(--color-accent);"></div>
+            </div>
+          </div>
+
+          <!-- Extraction Entity Chips Result -->
+          <div class="extraction-result" id="extractionResult">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <div style="font-family:var(--font-display); font-size:18px; font-weight:700;">Extracted Entities</div>
+              <span class="confidence-badge" id="confidenceText">94% Confidence</span>
+            </div>
+            <p style="font-size:13px; color:var(--color-muted); line-height:1.4; margin-bottom:20px;">
+              AI has surfaced the following medical parameters. You can click on the dotted text of any chip to edit/correct values if required.
+            </p>
+            <div id="extractionChips" class="extraction-chips">
+              <!-- Dynamically populated chips -->
+            </div>
+            <div style="display:flex; gap:12px; margin-top:24px;">
+              <button class="btn btn-outline" style="flex:1;" onclick="uploader.reset()">Discard</button>
+              <button class="btn btn-primary" style="flex:2;" onclick="uploader.saveVerification()">Confirm & Save to History</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RISK VIEW -->
+        <div id="page-risk" class="page">
+          <div class="risk-banner" id="riskBanner">
+            <div class="risk-banner-icon">⚡</div>
+            <div style="flex:1;">
+              <h2 class="risk-banner-title" id="riskBannerTitle">Evaluating Predictors</h2>
+              <div class="risk-banner-sub" id="riskBannerSub">Calculating heritability disease risks...</div>
+            </div>
+            <button class="btn btn-outline" style="background:#fff; color:var(--color-primary); border:none; padding:8px 16px;" onclick="risk.regenerateProfile()">Recalculate</button>
+          </div>
+          <div class="risk-charts-row">
+            <div class="radar-card">
+              <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--color-text); margin-bottom:16px;">Disease Risk Radar</div>
+              <div class="gauge-container" id="radarChart" style="width:100%; height:260px;">
+                <!-- SVG Radar Chart goes here -->
+              </div>
+            </div>
+            <div class="card" style="padding:24px;">
+              <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--color-text); margin-bottom:16px;">Risk Profile Progression</div>
+              <div id="trendChart" style="width:100%; height:200px;">
+                <!-- SVG line chart -->
+              </div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card" style="padding:24px;">
+              <div class="section-header">
+                <div><div class="section-title">Risk Watchlist</div><div class="section-subtitle">Top flagged hereditary factors</div></div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:12px;" id="watchlistContainer">
+                <!-- Filled dynamically -->
+              </div>
+            </div>
+            <div>
+              <div style="font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--color-text); margin-bottom:16px;">Predicted Diseases Breakdown</div>
+              <div class="risk-detail-cards" id="riskDetailCards">
+                <!-- Filled dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Heatmap Engagement widget -->
+          <div class="card" style="padding:24px; margin-top:24px;">
+            <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--color-text); margin-bottom:16px;">Health Updates Heatmap</div>
+            <div id="heatmapChart" style="width:100%; height:130px; overflow-x:auto;">
+              <!-- Heatmap grid -->
+            </div>
+          </div>
+        </div>
+
+        <!-- FAMILY HEALTH VIEW -->
+        <div id="page-family" class="page">
+          <div class="page-title">Generational Map</div>
+          <div class="page-subtitle">Track hereditary conditions and link account nodes across generations</div>
+          
+          <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
+            <div style="font-family:var(--font-display); font-size:16px; font-weight:700;">Interactive Family Graph</div>
+            <button class="btn btn-primary" onclick="family.openAddMemberModal()">➕ Add Family Member</button>
+          </div>
+
+          <div class="family-tree-container" id="familyTreeCanvas" style="min-height:360px;">
+            <!-- SVG Family Tree goes here -->
+          </div>
+
+          <div class="section-header">
+            <div><div class="section-title">Hereditary Patterns Detected</div><div class="section-subtitle">Conditions appearing across multiple generations</div></div>
+          </div>
+          <div class="hereditary-list" id="hereditaryList">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+
+        <!-- RECOMMENDATIONS VIEW -->
+        <div id="page-recommendations" class="page">
+          <div class="page-title">Preventative Plan</div>
+          <div class="page-subtitle">AI-curated recommendations based on your health profile and family risk</div>
+          <div class="tab-bar" id="recTabs">
+            <button class="tab-item active" onclick="recommendations.filterCategory(this, 'all')">All</button>
+            <button class="tab-item" onclick="recommendations.filterCategory(this, 'diet')">Diet</button>
+            <button class="tab-item" onclick="recommendations.filterCategory(this, 'exercise')">Exercise</button>
+            <button class="tab-item" onclick="recommendations.filterCategory(this, 'sleep')">Sleep</button>
+            <button class="tab-item" onclick="recommendations.filterCategory(this, 'checkup')">Checkups</button>
+          </div>
+          <div id="recommendationsList" style="display:flex; flex-direction:column; gap:12px;">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+
+        <!-- DOCTOR PORTAL VIEW -->
+        <div id="page-doctor" class="page">
+          <div class="page-title">Doctor Portal</div>
+          <div class="page-subtitle">Review patients who have authorized you to access their health records</div>
+          <div id="patientsList" style="margin-top:20px;">
+            <!-- Patients card layout -->
+          </div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div id="page-settings" class="page">
+          <div class="page-title">Settings & Privacy</div>
+          <div class="page-subtitle">Manage your account, privacy, and theme preferences</div>
+          <div class="profile-section">
+            <div class="profile-avatar" id="profileAvatarSettings">US</div>
+            <div style="flex:1;">
+              <div class="profile-name" id="profileNameSettings">Username</div>
+              <div class="profile-sub" id="profileSubSettings">Details loading...</div>
+            </div>
+            <button class="btn btn-outline" style="flex-shrink:0;">Edit Profile</button>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">App Settings</div>
+            <div class="settings-card">
+              <div class="settings-item"><div class="settings-item-icon">🌙</div><div class="settings-item-content"><div class="settings-item-label">Dark Mode</div><div class="settings-item-sub">Switch to dark theme</div></div><label class="toggle"><input type="checkbox" id="darkModeToggle" onchange="app.toggleDarkMode()"><span class="toggle-slider"></span></label></div>
+              <div class="settings-item"><div class="settings-item-icon">🔔</div><div class="settings-item-content"><div class="settings-item-label">Push Notifications</div><div class="settings-item-sub">Reminders and health alerts</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">Security & Encryption</div>
+            <div class="settings-card">
+              <div class="settings-item"><div class="settings-item-icon">🔐</div><div class="settings-item-content"><div class="settings-item-label">Data Encryption</div><div class="settings-item-sub">AES-256 end-to-end encrypted</div></div><span class="enc-badge">✓ AES-256 Encrypted</span></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- BOTTOM NAV FOR MOBILE DEVICES -->
+    <nav id="bottom-nav">
+      <div class="bottom-nav-inner">
+        <button class="bottom-nav-item active" onclick="app.navigateTo('dashboard')" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
+        <button class="bottom-nav-item" onclick="app.navigateTo('records')" data-page="records"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Records</button>
+        <button class="fab-btn" onclick="app.navigateTo('upload')" aria-label="Upload prescription"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg></button>
+        <button class="bottom-nav-item" onclick="app.navigateTo('family')" data-page="family"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Family</button>
+        <button class="bottom-nav-item" onclick="app.navigateTo('settings')" data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Profile</button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- SLIDE-IN DETAIL PANEL -->
+  <div class="detail-overlay" id="detailOverlay" onclick="app.closeDetail(event)">
+    <div class="detail-panel" id="detailPanel" onclick="event.stopPropagation()">
+      <div class="panel-header">
+        <div style="font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--color-text);" id="detailTitle">Details</div>
+        <button class="panel-close" onclick="app.closeDetail()">✕</button>
+      </div>
+      <div id="detailContent">
+        <!-- Loaded dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD FAMILY MEMBER MODAL -->
+  <div class="modal-overlay" id="addMemberModal">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="font-family:var(--font-display); font-weight:700; font-size:18px;">Add Family Member</h3>
+        <button onclick="family.closeAddMemberModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <form id="addMemberForm" onsubmit="family.handleAddMember(event)">
+        <div class="input-group">
+          <label class="input-label" for="addMemberName">Full Name</label>
+          <input type="text" id="addMemberName" class="input-field" required placeholder="Arjun Sharma">
+        </div>
+        <div class="grid-2" style="gap:12px;">
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="addMemberRel">Relationship</label>
+            <select id="addMemberRel" class="input-field">
+              <option value="father">Father</option>
+              <option value="mother">Mother</option>
+              <option value="brother">Brother</option>
+              <option value="sister">Sister</option>
+              <option value="paternal_grandfather">Paternal Grandfather</option>
+              <option value="paternal_grandmother">Paternal Grandmother</option>
+              <option value="maternal_grandfather">Maternal Grandfather</option>
+              <option value="maternal_grandmother">Maternal Grandmother</option>
+            </select>
+          </div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label class="input-label" for="addMemberGender">Gender</label>
+            <select id="addMemberGender" class="input-field">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div style="height:12px;"></div>
+        <div class="input-group">
+          <label class="input-label" for="addMemberDob">Date of Birth (Optional)</label>
+          <input type="date" id="addMemberDob" class="input-field">
+        </div>
+        <div class="input-group" style="display:flex; align-items:center; gap:12px;">
+          <label class="toggle"><input type="checkbox" id="addMemberDeceased"><span class="toggle-slider"></span></label>
+          <span style="font-size:13px; color:var(--color-muted);">Is Deceased</span>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:24px;">
+          <button class="btn btn-outline" type="button" onclick="family.closeAddMemberModal()" style="flex:1;">Cancel</button>
+          <button class="btn btn-primary" type="submit" style="flex:2;">Save Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FAMILY LINKING INVITE MODAL -->
+  <div class="modal-overlay" id="inviteModal">
+    <div class="modal" style="max-width: 440px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 id="inviteModalTitle" style="font-family:var(--font-display); font-weight:700; font-size:16px;">Invite to GenHealth</h3>
+        <button onclick="family.closeInviteModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div style="font-size:13px; color:var(--color-muted); margin-bottom:20px; line-height:1.4;">
+        Invite your family member to create an account on GenHealth. This links their health data to automatically calculate hereditary risks.
+      </div>
+      <div class="input-group">
+        <label class="input-label">📧 Email Address</label>
+        <input type="email" id="inviteEmail" class="input-field" placeholder="father@example.com">
+      </div>
+      <div class="input-group">
+        <label class="input-label">📱 WhatsApp / SMS Number</label>
+        <input type="text" id="invitePhone" class="input-field" placeholder="+91-9876543210">
+      </div>
+      <div class="input-group">
+        <label class="input-label">🔗 Share Invitation Link</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="inviteShareLink" class="input-field" style="flex:1; font-size:11px;" readonly>
+          <button class="btn btn-outline" onclick="family.copyInviteLink()" style="padding:0 12px; height:44px;">Copy</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; margin-top:24px;">
+        <button class="btn btn-outline" type="button" onclick="family.closeInviteModal()" style="flex:1;">Cancel</button>
+        <button class="btn btn-primary" onclick="family.sendInvite()" style="flex:2;">Send Invite</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST ALERTS -->
+  <div id="toast" style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--color-primary);color:#fff;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:500;z-index:300;opacity:0;transition:all 300ms ease;white-space:nowrap;box-shadow:0 8px 32px rgba(10,37,64,0.3);pointer-events:none;">✓ Saved successfully</div>
+
+  <!-- JS Logic Modules -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/charts.js"></script>
+  <script src="assets/js/upload.js"></script>
+  <script src="assets/js/family.js"></script>
+  <script src="assets/js/risk.js"></script>
+  <script src="assets/js/records.js"></script>
+  <script src="assets/js/recommendations.js"></script>
+  <script src="assets/js/app.js"></script>
+
+</body>
+</html>

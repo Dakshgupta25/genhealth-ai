@@ -1,0 +1,108 @@
+<div class="login-left">
+  <div class="bg-circle" style="width:300px;height:300px;background:#00C49A;top:-80px;left:-80px;"></div>
+  <div class="bg-circle" style="width:200px;height:200px;background:#1a4a7a;bottom:-40px;right:-40px;animation-delay:2s;"></div>
+  <div class="login-left-content">
+    <h1>Your Health Story<br>Across Generations</h1>
+    <p>GenHealth AI combines your personal records with family health history to predict, prevent, and personalize your healthcare journey.</p>
+    <div style="display:flex;justify-content:center;margin-bottom:32px;">
+      <svg class="dna-spinner" width="80" height="80" viewBox="0 0 80 80" fill="none">
+        <path d="M15 10 Q40 22 65 10" stroke="#00C49A" stroke-width="2.5" fill="none"/>
+        <path d="M15 30 Q40 42 65 30" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.75"/>
+        <path d="M15 50 Q40 62 65 50" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.5"/>
+        <path d="M15 70 Q40 82 65 70" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.25"/>
+        <line x1="15" y1="10" x2="15" y2="70" stroke="rgba(0,196,154,0.3)" stroke-width="2"/>
+        <line x1="65" y1="10" x2="65" y2="70" stroke="rgba(0,196,154,0.3)" stroke-width="2"/>
+        <line x1="15" y1="20" x2="65" y2="20" stroke="rgba(0,196,154,0.4)" stroke-width="1.5"/>
+        <line x1="15" y1="40" x2="65" y2="40" stroke="rgba(0,196,154,0.4)" stroke-width="1.5"/>
+        <line x1="15" y1="60" x2="65" y2="60" stroke="rgba(0,196,154,0.4)" stroke-width="1.5"/>
+        <circle cx="15" cy="10" r="4" fill="#00C49A"/>
+        <circle cx="65" cy="10" r="4" fill="#00C49A"/>
+        <circle cx="15" cy="30" r="4" fill="#00C49A" opacity="0.75"/>
+        <circle cx="65" cy="30" r="4" fill="#00C49A" opacity="0.75"/>
+        <circle cx="15" cy="50" r="4" fill="#00C49A" opacity="0.5"/>
+        <circle cx="65" cy="50" r="4" fill="#00C49A" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="login-stats">
+      <div class="login-stat"><div class="login-stat-value">4</div><div class="login-stat-label">Generations</div></div>
+      <div class="login-stat"><div class="login-stat-value">94%</div><div class="login-stat-label">AI Accuracy</div></div>
+      <div class="login-stat"><div class="login-stat-value">12+</div><div class="login-stat-label">Conditions</div></div>
+    </div>
+  </div>
+</div>
+<div class="login-right">
+  <div class="login-form-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C8 2 6 6 6 10C6 12 7 14 9 15L9 19C9 20 10 21 12 21C14 21 15 20 15 19L15 15C17 14 18 12 18 10C18 6 16 2 12 2Z" fill="white" opacity="0.9"/>
+          <circle cx="9" cy="10" r="1.5" fill="rgba(0,196,154,0.8)"/>
+          <circle cx="15" cy="10" r="1.5" fill="rgba(0,196,154,0.8)"/>
+        </svg>
+      </div>
+      <div class="login-logo-text">GenHealth AI<span>Generational Health Intelligence</span></div>
+    </div>
+    <div class="role-selector" id="roleSelector">
+      <div class="role-btn active" data-role="patient" onclick="auth.selectRole('patient', this)"><div class="role-btn-icon">🧑‍💊</div><div class="role-btn-label">Patient</div></div>
+      <div class="role-btn" data-role="doctor" onclick="auth.selectRole('doctor', this)"><div class="role-btn-icon">👨‍⚕️</div><div class="role-btn-label">Doctor</div></div>
+    </div>
+    <div class="auth-toggle">
+      <button class="auth-toggle-btn" id="loginTab" onclick="auth.goToLogin()">Login</button>
+      <button class="auth-toggle-btn active" id="signupTab" onclick="auth.goToSignup()">Sign Up</button>
+    </div>
+    <form id="signupForm" onsubmit="auth.handleSignup(event)">
+      <div class="login-title">Create Account ✨</div>
+      <div class="login-subtitle">Start your generational health journey</div>
+      <div class="grid-2" style="gap:12px;">
+        <div class="input-group" style="margin-bottom:0;">
+          <label class="input-label" for="signupName">Full Name</label>
+          <input type="text" id="signupName" class="input-field" required placeholder="Aryan Sharma">
+        </div>
+        <div class="input-group" style="margin-bottom:0;">
+          <label class="input-label" for="signupDob">Date of Birth</label>
+          <input type="date" id="signupDob" class="input-field" required value="2001-03-15">
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+      <div class="input-group">
+        <label class="input-label" for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" class="input-field" required placeholder="aryan@example.com">
+      </div>
+      <div class="input-group">
+        <label class="input-label" for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" class="input-field" required placeholder="Create a strong password" oninput="auth.checkPasswordStrength(this.value)">
+        <div id="password-strength-container" style="margin-top: 6px; display: none;">
+          <div class="progress-bar" style="height: 4px;">
+            <div id="password-strength-fill" class="progress-fill" style="width: 0%; background: var(--color-risk-high);"></div>
+          </div>
+          <span id="password-strength-text" style="font-size: 11px; color: var(--color-muted); margin-top: 4px; display: block;"></span>
+        </div>
+      </div>
+      <div class="grid-2" style="gap:12px;">
+        <div class="input-group" style="margin-bottom: 0;">
+          <label class="input-label" for="signupBlood">Blood Group</label>
+          <select id="signupBlood" class="input-field">
+            <option value="B+">B+</option>
+            <option value="A+">A+</option>
+            <option value="O+">O+</option>
+            <option value="AB+">AB+</option>
+            <option value="B-">B-</option>
+            <option value="A-">A-</option>
+            <option value="O-">O-</option>
+            <option value="AB-">AB-</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom: 0;">
+          <label class="input-label" for="signupGender">Gender</label>
+          <select id="signupGender" class="input-field">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+      <button class="login-submit-btn" type="submit">Create Account →</button>
+    </form>
+  </div>
+</div>

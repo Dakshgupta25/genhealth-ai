@@ -1,0 +1,114 @@
+<div class="login-left" style="background: linear-gradient(135deg, #0A2540 0%, #1a4a7a 50%, #00C49A 100%);">
+  <div class="login-left-content">
+    <h1>Personalize Your Health Profile</h1>
+    <p>Let's set up your core metrics to enable GenHealth AI's disease risk prediction models with highest precision.</p>
+    <div style="display:flex;justify-content:center;margin-bottom:32px;">
+      <svg class="dna-spinner" width="80" height="80" viewBox="0 0 80 80" fill="none">
+        <path d="M15 10 Q40 22 65 10" stroke="#00C49A" stroke-width="2.5" fill="none"/>
+        <path d="M15 30 Q40 42 65 30" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.75"/>
+        <line x1="15" y1="10" x2="15" y2="70" stroke="rgba(0,196,154,0.3)" stroke-width="2"/>
+        <line x1="65" y1="10" x2="65" y2="70" stroke="rgba(0,196,154,0.3)" stroke-width="2"/>
+        <circle cx="15" cy="10" r="4" fill="#00C49A"/>
+        <circle cx="65" cy="10" r="4" fill="#00C49A"/>
+      </svg>
+    </div>
+  </div>
+</div>
+<div class="login-right">
+  <div class="login-form-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C8 2 6 6 6 10C6 12 7 14 9 15L9 19C9 20 10 21 12 21C14 21 15 20 15 19L15 15C17 14 18 12 18 10C18 6 16 2 12 2Z" fill="white" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="login-logo-text">GenHealth AI<span>Onboarding Profile</span></div>
+    </div>
+    
+    <!-- Multi-step Indicator -->
+    <div style="display:flex; justify-content:space-between; margin-bottom:24px;">
+      <div style="font-size:12px; font-weight:600; color:var(--color-accent);" id="stepIndicator">Step 1 of 2: Health Info</div>
+      <div style="font-size:12px; color:var(--color-muted);" id="stepProgress">50% Complete</div>
+    </div>
+    <div class="progress-bar" style="height:6px; margin-bottom:24px;">
+      <div id="onboardingProgressBar" class="progress-fill" style="width: 50%; background: var(--color-accent);"></div>
+    </div>
+
+    <form id="onboardingForm" onsubmit="auth.handleOnboardingSubmit(event)">
+      <!-- STEP 1: Basic Health Profile -->
+      <div id="onboardStep1">
+        <div class="login-title">Core Health Profile</div>
+        <div class="login-subtitle">We need a few more particulars to tailor predictions</div>
+        
+        <div class="input-group">
+          <label class="input-label" for="onboardPhone">Phone Number</label>
+          <input type="text" id="onboardPhone" class="input-field" placeholder="+91-9876543210">
+        </div>
+        
+        <div class="grid-2" style="gap:12px;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <label class="input-label" for="onboardGender">Gender</label>
+            <select id="onboardGender" class="input-field">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <label class="input-label" for="onboardBlood">Blood Group</label>
+            <select id="onboardBlood" class="input-field">
+              <option value="B+">B+</option>
+              <option value="A+">A+</option>
+              <option value="O+">O+</option>
+              <option value="AB+">AB+</option>
+              <option value="B-">B-</option>
+              <option value="A-">A-</option>
+              <option value="O-">O-</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+        </div>
+        <div style="height:24px;"></div>
+        <button class="login-submit-btn" type="button" onclick="auth.nextOnboardStep()">Next Step →</button>
+      </div>
+
+      <!-- STEP 2: Lifestyle Preferences & Background -->
+      <div id="onboardStep2" style="display:none;">
+        <div class="login-title">Preferences & Lifestyle</div>
+        <div class="login-subtitle">General metrics to fine-tune AI health recommendations</div>
+        
+        <div class="input-group">
+          <label class="input-label">Physical Activity Level</label>
+          <select id="onboardActivity" class="input-field">
+            <option value="sedentary">Sedentary (No regular exercise)</option>
+            <option value="moderate" selected>Moderate (3-4 times/week)</option>
+            <option value="active">Active (Daily athletic exercise)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Dietary Preference</label>
+          <select id="onboardDiet" class="input-field">
+            <option value="veg">Vegetarian</option>
+            <option value="nonveg" selected>Non-Vegetarian</option>
+            <option value="vegan">Vegan</option>
+          </select>
+        </div>
+        
+        <div class="dna-divider">
+          <div class="dna-divider-line"></div>
+          <span>Security & Consent</span>
+          <div class="dna-divider-line"></div>
+        </div>
+        <div class="input-group" style="display:flex; align-items:center; gap:12px;">
+          <label class="toggle"><input type="checkbox" id="onboardConsent" checked required><span class="toggle-slider"></span></label>
+          <span style="font-size:12px; color:var(--color-muted); line-height:1.4;">I consent to the secure end-to-end encrypted storage and AI processing of my medical documents.</span>
+        </div>
+        
+        <div style="display:flex; gap:12px; margin-top:20px;">
+          <button class="btn btn-outline" type="button" onclick="auth.prevOnboardStep()" style="flex:1;">Back</button>
+          <button class="login-submit-btn" type="submit" style="flex:2; margin-top:0;">Finish Onboarding</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

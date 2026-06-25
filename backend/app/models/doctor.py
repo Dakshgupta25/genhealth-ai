@@ -21,7 +21,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship as orm_relationship
 
 from app.database import Base
 
@@ -73,12 +73,12 @@ class DoctorAccess(Base):
     revocation_reason = Column(Text, nullable=True)
 
     # ─── Relationships ─────────────────────────────────────────────────
-    patient: "User" = relationship(
+    patient: "User" = orm_relationship(
         "User",
         foreign_keys=[patient_id],
         back_populates="doctor_access_grants",
     )
-    doctor: "User" = relationship(
+    doctor: "User" = orm_relationship(
         "User",
         foreign_keys=[doctor_id],
     )
@@ -134,12 +134,12 @@ class FamilyInvite(Base):
     responded_at = Column(DateTime(timezone=True), nullable=True)
 
     # ─── Relationships ─────────────────────────────────────────────────
-    inviter: "User" = relationship(
+    inviter: "User" = orm_relationship(
         "User",
         foreign_keys=[inviter_id],
         back_populates="sent_invites",
     )
-    family_member: Optional["FamilyMember"] = relationship(
+    family_member: Optional["FamilyMember"] = orm_relationship(
         "FamilyMember",
         back_populates="invites",
     )

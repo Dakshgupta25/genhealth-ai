@@ -32,7 +32,7 @@ settings = get_settings()
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy ORM models."""
-    pass
+    __allow_unmapped__ = True
 
 
 # ─── PostgreSQL ───────────────────────────────────────────────────────────────

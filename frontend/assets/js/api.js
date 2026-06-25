@@ -1,259 +1,359 @@
-/**
- * GenHealth AI — API Client Layer
- *
- * Central HTTP client that:
- * - Manages base URL configuration
- * - Attaches Authorization headers automatically
- * - Handles token refresh on 401 responses
- * - Returns consistent {success, data, message} or throws ApiError
- */
-
-const API_BASE_URL = "http://localhost:8000/api/v1";
-
-// ─── Token Management ────────────────────────────────────────────────────────
-
-const TokenStore = {
-  getAccess: () => localStorage.getItem("gh_access_token"),
-  getRefresh: () => localStorage.getItem("gh_refresh_token"),
-  setTokens: (access, refresh) => {
-    localStorage.setItem("gh_access_token", access);
-    if (refresh) localStorage.setItem("gh_refresh_token", refresh);
-  },
-  clear: () => {
-    localStorage.removeItem("gh_access_token");
-    localStorage.removeItem("gh_refresh_token");
-    localStorage.removeItem("gh_user");
-  },
-};
-
-// ─── ApiError Class ───────────────────────────────────────────────────────────
-
-class ApiError extends Error {
-  /**
-   * @param {string} message - Human-readable error message
-   * @param {string} code    - Machine-readable error code
-   * @param {number} status  - HTTP status code
-   */
-  constructor(message, code, status) {
-    super(message);
-    this.name = "ApiError";
-    this.code = code;
-    this.status = status;
-  }
-}
-
-// ─── Core Fetch Wrapper ──────────────────────────────────────────────────────
-
-let _isRefreshing = false;
-let _refreshQueue = [];
-
-/**
- * Make an authenticated API request.
- *
- * Automatically:
- * - Attaches the Bearer token
- * - Retries once with a refreshed token on 401
- * - Throws ApiError on non-success responses
- *
- * @param {string} endpoint  - API path (e.g. "/auth/me")
- * @param {RequestInit} opts - Fetch options (method, body, headers)
- * @returns {Promise<any>}   - The `data` field from the response envelope
- */
-async function apiFetch(endpoint, opts = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const headers = {
-    "Content-Type": "application/json",
-    ...opts.headers,
-  };
-
-  const accessToken = TokenStore.getAccess();
-  if (accessToken) {
-    headers["Authorization"] = `Bearer ${accessToken}`;
+class GenHealthAPI {
+  constructor(baseURL) {
+    this.baseURL = baseURL;
+    this.isRefreshing = false;
+    this.refreshSubscribers = [];
   }
 
-  const response = await fetch(url, { ...opts, headers });
-  const json = await response.json().catch(() => ({}));
+  // Token management
+  getToken() {
+    return localStorage.getItem(CONFIG.TOKEN_KEY);
+  }
 
-  // Handle 401 — attempt token refresh
-  if (response.status === 401 && !opts._retried) {
-    const refreshed = await _tryRefreshToken();
-    if (refreshed) {
-      return apiFetch(endpoint, { ...opts, _retried: true });
-    } else {
-      TokenStore.clear();
-      window.dispatchEvent(new CustomEvent("gh:logout"));
-      throw new ApiError(json.error || "Session expired.", json.code || "UNAUTHORIZED", 401);
+  getRefreshToken() {
+    return localStorage.getItem(CONFIG.REFRESH_KEY);
+  }
+
+  setTokens(access, refresh) {
+    localStorage.setItem(CONFIG.TOKEN_KEY, access);
+    localStorage.setItem(CONFIG.REFRESH_KEY, refresh);
+  }
+
+  clearTokens() {
+    localStorage.removeItem(CONFIG.TOKEN_KEY);
+    localStorage.removeItem(CONFIG.REFRESH_KEY);
+    localStorage.removeItem(CONFIG.USER_KEY);
+  }
+
+  getUser() {
+    const userJson = localStorage.getItem(CONFIG.USER_KEY);
+    try {
+      return userJson ? JSON.parse(userJson) : null;
+    } catch (e) {
+      return null;
     }
   }
 
-  if (!json.success) {
-    throw new ApiError(
-      json.error || "An unexpected error occurred.",
-      json.code || "UNKNOWN_ERROR",
-      response.status,
-    );
+  setUser(user) {
+    localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(user));
   }
 
-  return json.data;
-}
-
-/**
- * Attempt to refresh the access token using the stored refresh token.
- * @returns {Promise<boolean>} True if refresh succeeded.
- */
-async function _tryRefreshToken() {
-  const refreshToken = TokenStore.getRefresh();
-  if (!refreshToken) return false;
-
-  if (_isRefreshing) {
-    // Queue this request until refresh completes
-    return new Promise((resolve) => _refreshQueue.push(resolve));
+  // Subscribe to token refresh events
+  subscribeTokenRefresh(cb) {
+    this.refreshSubscribers.push(cb);
   }
 
-  _isRefreshing = true;
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+  onRefreshed(token) {
+    this.refreshSubscribers.map(cb => cb(token));
+    this.refreshSubscribers = [];
+  }
+
+  // Core request method with auto-refresh on 401
+  async request(method, path, body = null, isFormData = false) {
+    const url = `${this.baseURL}${path}`;
+    const headers = {};
+
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const options = {
+      method,
+      headers,
+    };
+
+    if (body) {
+      options.body = isFormData ? body : JSON.stringify(body);
+    }
+
+    try {
+      const response = await fetch(url, options);
+
+      // Handle 401: try refreshing token
+      if (response.status === 401 && this.getRefreshToken() && path !== '/auth/refresh' && path !== '/auth/login') {
+        try {
+          const newAccessToken = await this.handleTokenRefresh();
+          // Retry the request with the new access token
+          headers['Authorization'] = `Bearer ${newAccessToken}`;
+          const retryResponse = await fetch(url, options);
+          return await this.parseResponse(retryResponse);
+        } catch (refreshErr) {
+          // Token refresh failed -> clear tokens and redirect to login
+          this.clearTokens();
+          window.location.hash = '#login';
+          throw new Error('Session expired. Please log in again.');
+        }
+      }
+
+      return await this.parseResponse(response);
+    } catch (error) {
+      console.error(`API request error on ${path}:`, error);
+      throw error;
+    }
+  }
+
+  async parseResponse(response) {
+    const text = await response.text();
+    let json = {};
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch (e) {
+      json = { success: response.ok, error: 'Failed to parse JSON response' };
+    }
+
+    if (!response.ok) {
+      const errMessage = json.detail && json.detail.error ? json.detail.error : (json.message || response.statusText || 'API Error');
+      const errCode = json.detail && json.detail.code ? json.detail.code : 'API_ERROR';
+      const error = new Error(errMessage);
+      error.status = response.status;
+      error.code = errCode;
+      throw error;
+    }
+
+    return json;
+  }
+
+  async handleTokenRefresh() {
+    if (this.isRefreshing) {
+      return new Promise((resolve) => {
+        this.subscribeTokenRefresh(token => {
+          resolve(token);
+        });
+      });
+    }
+
+    this.isRefreshing = true;
+
+    try {
+      const refreshPayload = { refresh_token: this.getRefreshToken() };
+      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(refreshPayload)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh token');
+      }
+
+      const json = await response.json();
+      const tokens = json.data;
+      this.setTokens(tokens.access_token, tokens.refresh_token);
+      this.isRefreshing = false;
+      this.onRefreshed(tokens.access_token);
+      return tokens.access_token;
+    } catch (err) {
+      this.isRefreshing = false;
+      throw err;
+    }
+  }
+
+  // Auth Endpoints
+  async login(email, password) {
+    const res = await this.request('POST', '/auth/login', { email, password });
+    if (res.success && res.data) {
+      this.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
+      this.setUser(res.data.user);
+    }
+    return res;
+  }
+
+  async signup(data) {
+    // data: { email, password, full_name, date_of_birth, gender, blood_group, role }
+    const res = await this.request('POST', '/auth/signup', data);
+    if (res.success && res.data) {
+      this.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
+      this.setUser(res.data.user);
+    }
+    return res;
+  }
+
+  async verifyEmail(email, otp) {
+    return await this.request('POST', '/auth/verify-email', { email, otp });
+  }
+
+  async getMe() {
+    const res = await this.request('GET', '/auth/me');
+    if (res.success && res.data) {
+      this.setUser(res.data);
+    }
+    return res;
+  }
+
+  async updateProfile(data) {
+    // data: { full_name, phone, date_of_birth, gender, blood_group }
+    const res = await this.request('PATCH', '/auth/me', data);
+    if (res.success && res.data) {
+      this.setUser(res.data);
+    }
+    return res;
+  }
+
+  async logout() {
+    try {
+      await this.request('POST', '/auth/logout');
+    } catch (e) {
+      console.warn('Logout endpoint failed or user already logged out', e);
+    } finally {
+      this.clearTokens();
+    }
+  }
+
+  // Family Endpoints
+  async getFamilyMembers() {
+    return await this.request('GET', '/family/members');
+  }
+
+  async addFamilyMember(data) {
+    // data: { name, relationship, gender, date_of_birth, is_deceased }
+    return await this.request('POST', '/family/members', data);
+  }
+
+  async updateFamilyMember(memberId, data) {
+    return await this.request('PATCH', `/family/members/${memberId}`, data);
+  }
+
+  async deleteFamilyMember(memberId) {
+    return await this.request('DELETE', `/family/members/${memberId}`);
+  }
+
+  async sendFamilyInvite(familyMemberId, email, phone) {
+    // data: { family_member_id, invitee_email, invitee_phone }
+    return await this.request('POST', '/family/invite', {
+      family_member_id: familyMemberId,
+      invitee_email: email || null,
+      invitee_phone: phone || null
     });
-    const json = await response.json();
-    if (json.success && json.data?.access_token) {
-      TokenStore.setTokens(json.data.access_token, json.data.refresh_token);
-      _refreshQueue.forEach((resolve) => resolve(true));
-      return true;
-    }
-  } catch (e) {
-    console.error("Token refresh failed:", e);
-  } finally {
-    _isRefreshing = false;
-    _refreshQueue = [];
   }
-  return false;
+
+  async getInviteDetails(token) {
+    // public endpoint GET /api/v1/invite/:token
+    // Wait, the router prefix is "/invite" in main.py, so it's "/invite/{token}"
+    return await this.request('GET', `/invite/${token}`);
+  }
+
+  async acceptInvite(token, data) {
+    // POST /api/v1/invite/:token/accept
+    // data: { email, password, full_name, date_of_birth, gender }
+    const res = await this.request('POST', `/invite/${token}/accept`, data);
+    if (res.success && res.data) {
+      this.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
+      this.setUser(res.data.user);
+    }
+    return res;
+  }
+
+  async getFamilyTree() {
+    return await this.request('GET', '/family/tree');
+  }
+
+  async getSharedRisks() {
+    return await this.request('GET', '/family/shared-risks');
+  }
+
+  // Records Endpoints
+  async getRecords(filters = {}) {
+    // filters: { page, per_page, record_type, include_family }
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== undefined && filters[key] !== null) {
+        params.append(key, filters[key]);
+      }
+    });
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return await this.request('GET', `/records/${qs}`);
+  }
+
+  async getRecord(id) {
+    return await this.request('GET', `/records/${id}`);
+  }
+
+  async uploadPrescription(file, recordType = 'prescription', familyMemberId = null) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('record_type', recordType);
+    if (familyMemberId) {
+      formData.append('family_member_id', familyMemberId);
+    }
+    return await this.request('POST', '/upload/', formData, true);
+  }
+
+  async verifyRecord(id, corrections = null, structuredData = null) {
+    // body: { corrections: [{entity_id, corrected_value}], structured_data: {} }
+    return await this.request('PATCH', `/records/${id}/verify`, { corrections, structured_data: structuredData });
+  }
+
+  async getTimeline() {
+    return await this.request('GET', '/records/timeline');
+  }
+
+  // Risk Endpoints
+  async getRiskProfile() {
+    return await this.request('GET', '/risk/profile');
+  }
+
+  async getRiskPredictions() {
+    return await this.request('GET', '/risk/predictions');
+  }
+
+  async generateRisk(diseaseName = null, force = true) {
+    return await this.request('POST', '/risk/generate', { disease_name: diseaseName, force });
+  }
+
+  async getWatchlist(limit = 5) {
+    return await this.request('GET', `/risk/watchlist?limit=${limit}`);
+  }
+
+  // Insights Endpoints
+  async getHealthScore() {
+    return await this.request('GET', '/insights/health-score');
+  }
+
+  async getTrends(months = 12) {
+    return await this.request('GET', `/insights/trends?months=${months}`);
+  }
+
+  async getHeatmap(months = 12) {
+    return await this.request('GET', `/insights/heatmap?months=${months}`);
+  }
+
+  async getSummary() {
+    return await this.request('GET', '/insights/summary');
+  }
+
+  async getRecommendations(category = null, priority = null) {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (priority) params.append('priority', priority);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return await this.request('GET', `/recommendations/${qs}`);
+  }
+
+  // Doctor Portal Endpoints
+  async doctorLogin(email, password) {
+    // Doctors login via the normal auth flow
+    return await this.login(email, password);
+  }
+
+  async getPatients() {
+    return await this.request('GET', '/doctor/patients');
+  }
+
+  async getPatientSummary(patientId) {
+    return await this.request('GET', `/doctor/patients/${patientId}`);
+  }
+
+  async getRelevantRecords(patientId, complaint) {
+    return await this.request('GET', `/doctor/patients/${patientId}/relevant?complaint=${encodeURIComponent(complaint)}`);
+  }
 }
 
-// ─── Convenience Helpers ─────────────────────────────────────────────────────
-
-const api = {
-  get: (endpoint, opts = {}) => apiFetch(endpoint, { method: "GET", ...opts }),
-
-  post: (endpoint, body, opts = {}) =>
-    apiFetch(endpoint, {
-      method: "POST",
-      body: JSON.stringify(body),
-      ...opts,
-    }),
-
-  patch: (endpoint, body, opts = {}) =>
-    apiFetch(endpoint, {
-      method: "PATCH",
-      body: JSON.stringify(body),
-      ...opts,
-    }),
-
-  delete: (endpoint, opts = {}) =>
-    apiFetch(endpoint, { method: "DELETE", ...opts }),
-
-  /**
-   * Upload a file using multipart/form-data.
-   * @param {string} endpoint
-   * @param {FormData} formData
-   */
-  upload: (endpoint, formData) =>
-    apiFetch(endpoint, {
-      method: "POST",
-      headers: {}, // Let browser set Content-Type with boundary
-      body: formData,
-    }),
-};
-
-// ─── Named Endpoint Modules ──────────────────────────────────────────────────
-
-/** Auth endpoints */
-const authApi = {
-  signup: (data) => api.post("/auth/signup", data),
-  login: (email, password) => api.post("/auth/login", { email, password }),
-  refresh: (refreshToken) => api.post("/auth/refresh", { refresh_token: refreshToken }),
-  logout: () => api.post("/auth/logout"),
-  me: () => api.get("/auth/me"),
-  updateProfile: (data) => api.patch("/auth/me", data),
-  verifyEmail: (email, otp) => api.post("/auth/verify-email", { email, otp }),
-  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
-  resetPassword: (token, newPassword) =>
-    api.post("/auth/reset-password", { token, new_password: newPassword }),
-};
-
-/** Family endpoints */
-const familyApi = {
-  listMembers: () => api.get("/family/members"),
-  addMember: (data) => api.post("/family/members", data),
-  updateMember: (id, data) => api.patch(`/family/members/${id}`, data),
-  deleteMember: (id) => api.delete(`/family/members/${id}`),
-  sendInvite: (data) => api.post("/family/invite", data),
-  getTree: () => api.get("/family/tree"),
-  getSharedRisks: () => api.get("/family/shared-risks"),
-};
-
-/** Records endpoints */
-const recordsApi = {
-  list: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return api.get(`/records/?${qs}`);
-  },
-  get: (id) => api.get(`/records/${id}`),
-  verify: (id, data) => api.patch(`/records/${id}/verify`, data),
-  delete: (id) => api.delete(`/records/${id}`),
-  timeline: () => api.get("/records/timeline"),
-  entities: (type) => api.get(`/records/entities${type ? `?entity_type=${type}` : ""}`),
-};
-
-/** Upload endpoints */
-const uploadApi = {
-  uploadFile: (file, recordType = "prescription", familyMemberId = null) => {
-    const form = new FormData();
-    form.append("file", file);
-    form.append("record_type", recordType);
-    if (familyMemberId) form.append("family_member_id", familyMemberId);
-    return api.upload("/upload/", form);
-  },
-  taskStatus: (taskId) => api.get(`/upload/status/${taskId}`),
-};
-
-/** Risk endpoints */
-const riskApi = {
-  profile: () => api.get("/risk/profile"),
-  predictions: () => api.get("/risk/predictions"),
-  generate: (data = {}) => api.post("/risk/generate", data),
-  diseaseDetail: (name) => api.get(`/risk/predictions/${encodeURIComponent(name)}`),
-  familyRisk: () => api.get("/risk/family-risk"),
-  watchlist: (limit = 5) => api.get(`/risk/watchlist?limit=${limit}`),
-};
-
-/** Insights endpoints */
-const insightsApi = {
-  healthScore: () => api.get("/insights/health-score"),
-  trends: (months = 12) => api.get(`/insights/trends?months=${months}`),
-  summary: () => api.get("/insights/summary"),
-  recommendations: () => api.get("/insights/recommendations"),
-  heatmap: (months = 12) => api.get(`/insights/heatmap?months=${months}`),
-};
-
-/** Invite endpoints (public) */
-const inviteApi = {
-  validate: (token) => api.get(`/invite/${token}`),
-  accept: (token, data) => api.post(`/invite/${token}/accept`, data),
-};
-
-// Export for use in other modules
-window.GenHealthAPI = {
-  TokenStore,
-  ApiError,
-  api,
-  auth: authApi,
-  family: familyApi,
-  records: recordsApi,
-  upload: uploadApi,
-  risk: riskApi,
-  insights: insightsApi,
-  invite: inviteApi,
-};
+const api = new GenHealthAPI(CONFIG.API_BASE);
+window.api = api;

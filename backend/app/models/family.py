@@ -20,7 +20,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship as orm_relationship
 
 from app.database import Base
 
@@ -119,22 +119,22 @@ class FamilyMember(Base):
     )
 
     # ─── Relationships ─────────────────────────────────────────────────
-    user: "User" = relationship(
+    user: "User" = orm_relationship(
         "User",
         foreign_keys=[user_id],
         back_populates="family_members",
     )
-    related_user: Optional["User"] = relationship(
+    related_user: Optional["User"] = orm_relationship(
         "User",
         foreign_keys=[related_user_id],
     )
-    health_records: List["HealthRecord"] = relationship(
+    health_records: List["HealthRecord"] = orm_relationship(
         "HealthRecord",
         back_populates="family_member",
         cascade="all, delete-orphan",
         lazy="select",
     )
-    invites: List["FamilyInvite"] = relationship(
+    invites: List["FamilyInvite"] = orm_relationship(
         "FamilyInvite",
         back_populates="family_member",
         cascade="all, delete-orphan",

@@ -1,0 +1,72 @@
+<div class="login-left">
+  <div class="bg-circle" style="width:300px;height:300px;background:#00C49A;top:-80px;left:-80px;"></div>
+  <div class="bg-circle" style="width:200px;height:200px;background:#1a4a7a;bottom:-40px;right:-40px;animation-delay:2s;"></div>
+  <div class="login-left-content">
+    <h1>Your Health Story<br>Across Generations</h1>
+    <p>GenHealth AI combines your personal records with family health history to predict, prevent, and personalize your healthcare journey.</p>
+    <div style="display:flex;justify-content:center;margin-bottom:32px;">
+      <svg class="dna-spinner" width="80" height="80" viewBox="0 0 80 80" fill="none">
+        <path d="M15 10 Q40 22 65 10" stroke="#00C49A" stroke-width="2.5" fill="none"/>
+        <path d="M15 30 Q40 42 65 30" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.75"/>
+        <path d="M15 50 Q40 62 65 50" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.5"/>
+        <path d="M15 70 Q40 82 65 70" stroke="#00C49A" stroke-width="2.5" fill="none" opacity="0.25"/>
+        <line x1="15" y1="10" x2="15" y2="70" stroke="rgba(0,196,154,0.3)" stroke-width="2"/>
+        <line x1="65" y1="10" x2="65" y2="70" stroke="rgba(0,196,154,0.3)" stroke-width="2"/>
+        <line x1="15" y1="20" x2="65" y2="20" stroke="rgba(0,196,154,0.4)" stroke-width="1.5"/>
+        <line x1="15" y1="40" x2="65" y2="40" stroke="rgba(0,196,154,0.4)" stroke-width="1.5"/>
+        <line x1="15" y1="60" x2="65" y2="60" stroke="rgba(0,196,154,0.4)" stroke-width="1.5"/>
+        <circle cx="15" cy="10" r="4" fill="#00C49A"/>
+        <circle cx="65" cy="10" r="4" fill="#00C49A"/>
+        <circle cx="15" cy="30" r="4" fill="#00C49A" opacity="0.75"/>
+        <circle cx="65" cy="30" r="4" fill="#00C49A" opacity="0.75"/>
+        <circle cx="15" cy="50" r="4" fill="#00C49A" opacity="0.5"/>
+        <circle cx="65" cy="50" r="4" fill="#00C49A" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="login-stats">
+      <div class="login-stat"><div class="login-stat-value">4</div><div class="login-stat-label">Generations</div></div>
+      <div class="login-stat"><div class="login-stat-value">94%</div><div class="login-stat-label">AI Accuracy</div></div>
+      <div class="login-stat"><div class="login-stat-value">12+</div><div class="login-stat-label">Conditions</div></div>
+    </div>
+  </div>
+</div>
+<div class="login-right">
+  <div class="login-form-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C8 2 6 6 6 10C6 12 7 14 9 15L9 19C9 20 10 21 12 21C14 21 15 20 15 19L15 15C17 14 18 12 18 10C18 6 16 2 12 2Z" fill="white" opacity="0.9"/>
+          <circle cx="9" cy="10" r="1.5" fill="rgba(0,196,154,0.8)"/>
+          <circle cx="15" cy="10" r="1.5" fill="rgba(0,196,154,0.8)"/>
+        </svg>
+      </div>
+      <div class="login-logo-text">GenHealth AI<span>Generational Health Intelligence</span></div>
+    </div>
+    <div class="role-selector" id="roleSelector">
+      <div class="role-btn active" data-role="patient" onclick="auth.selectRole('patient', this)"><div class="role-btn-icon">🧑‍💊</div><div class="role-btn-label">Patient</div></div>
+      <div class="role-btn" data-role="doctor" onclick="auth.selectRole('doctor', this)"><div class="role-btn-icon">👨‍⚕️</div><div class="role-btn-label">Doctor</div></div>
+    </div>
+    <div class="auth-toggle">
+      <button class="auth-toggle-btn active" id="loginTab" onclick="auth.goToLogin()">Login</button>
+      <button class="auth-toggle-btn" id="signupTab" onclick="auth.goToSignup()">Sign Up</button>
+    </div>
+    <form id="loginForm" onsubmit="auth.handleLogin(event)">
+      <div class="login-title">Welcome back 👋</div>
+      <div class="login-subtitle">Sign in to continue your health journey</div>
+      <button class="google-btn" type="button" onclick="auth.handleGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+        Continue with Google
+      </button>
+      <div class="divider"><div class="divider-line"></div><span>or sign in with email</span><div class="divider-line"></div></div>
+      <div class="input-group">
+        <label class="input-label" for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" class="input-field" required placeholder="aryan@example.com">
+      </div>
+      <div class="input-group">
+        <label class="input-label" for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" class="input-field" required placeholder="••••••••">
+      </div>
+      <button class="login-submit-btn" type="submit">Sign In →</button>
+    </form>
+  </div>
+</div>
