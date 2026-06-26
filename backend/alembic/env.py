@@ -7,6 +7,10 @@ Configures the migration environment to:
 - Auto-detect model changes from ORM metadata
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import asyncio
 from logging.config import fileConfig
 
@@ -43,11 +47,10 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Override alembic.ini sqlalchemy.url with the env var
+
 config.set_main_option(
     "sqlalchemy.url",
-    settings.SYNC_DATABASE_URL or settings.DATABASE_URL.replace(
-        "postgresql+asyncpg://", "postgresql://"
-    ),
+    settings.DATABASE_URL,
 )
 
 # Provide the ORM metadata for --autogenerate support
