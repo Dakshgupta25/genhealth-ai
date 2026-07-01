@@ -11,10 +11,10 @@
   <link rel="manifest" href="manifest.json">
   
   <!-- CSS Stylesheets -->
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/layout.css">
-  <link rel="stylesheet" href="assets/css/components.css">
-  <link rel="stylesheet" href="assets/css/pages.css">
+  <link rel="stylesheet" href="assets/css/base.css?v=1.0.2">
+  <link rel="stylesheet" href="assets/css/layout.css?v=1.0.2">
+  <link rel="stylesheet" href="assets/css/components.css?v=1.0.2">
+  <link rel="stylesheet" href="assets/css/pages.css?v=1.0.2">
 </head>
 <body>
 
@@ -171,17 +171,18 @@
 
           <!-- Selected File Preview -->
           <div id="uploadPreview" class="card" style="padding:24px; display:none; margin-bottom:20px;">
-            <div style="display:flex; align-items:center; gap:16px;">
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap: wrap;">
               <img id="previewThumbnail" src="" alt="Thumbnail" style="width:60px; height:60px; object-fit:cover; border-radius:8px; display:none;">
-              <div style="flex:1;">
+              <div style="flex:1; min-width: 150px;">
                 <div id="previewFileName" style="font-weight:600; font-size:14px;">filename.jpg</div>
                 <div style="font-size:12px; color:var(--color-muted);">File ready to upload.</div>
               </div>
-              <button class="btn btn-danger" onclick="uploader.reset()" style="padding: 8px 12px; font-size:12px;">Clear</button>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-primary" id="startUploadBtn" style="padding: 8px 16px; font-size:12px;" disabled>Extract Now</button>
+                <button class="btn btn-danger" onclick="uploader.reset()" style="padding: 8px 12px; font-size:12px;">Clear</button>
+              </div>
             </div>
           </div>
-
-          <button class="btn btn-primary" id="startUploadBtn" style="width:100%; display:none; height:48px;" disabled>Run AI Extraction →</button>
 
           <!-- Celery Polling Progress State -->
           <div class="processing-state card" id="processingState">
@@ -200,21 +201,45 @@
             </div>
           </div>
 
-          <!-- Extraction Entity Chips Result -->
-          <div class="extraction-result" id="extractionResult">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-              <div style="font-family:var(--font-display); font-size:18px; font-weight:700;">Extracted Entities</div>
-              <span class="confidence-badge" id="confidenceText">94% Confidence</span>
-            </div>
-            <p style="font-size:13px; color:var(--color-muted); line-height:1.4; margin-bottom:20px;">
-              AI has surfaced the following medical parameters. You can click on the dotted text of any chip to edit/correct values if required.
-            </p>
-            <div id="extractionChips" class="extraction-chips">
-              <!-- Dynamically populated chips -->
-            </div>
-            <div style="display:flex; gap:12px; margin-top:24px;">
-              <button class="btn btn-outline" style="flex:1;" onclick="uploader.reset()">Discard</button>
-              <button class="btn btn-primary" style="flex:2;" onclick="uploader.saveVerification()">Confirm & Save to History</button>
+          <!-- Extraction Entity Chips Result (Modal Overlay) -->
+          <div class="modal-overlay" id="reviewModal">
+            <div class="modal" style="max-width: 520px; width: 95%;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div style="font-family:var(--font-display); font-size:18px; font-weight:700;">Review Extracted Parameters</div>
+                <span class="confidence-badge" id="confidenceText">94% Confidence</span>
+              </div>
+              <p style="font-size:13px; color:var(--color-muted); line-height:1.4; margin-bottom:16px;">
+                Please verify the extracted parameters. Unconfirmed fields with low confidence (&lt; 70%) are highlighted in red and must be confirmed or edited before saving.
+              </p>
+              
+              <div id="extractionChips" class="extraction-chips" style="margin-bottom: 20px;">
+                <!-- Dynamically populated chips -->
+              </div>
+
+              <!-- Add New Entity Interface -->
+              <div class="add-entity-box" style="background:var(--color-bg); border: 1px solid var(--color-border); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                <div style="font-size:12px; font-weight:600; color:var(--color-text); margin-bottom:8px;">Add Missing Parameter</div>
+                <div style="display:flex; gap:8px;">
+                  <select id="newEntityType" class="input-field" style="width: 120px; height: 36px; padding: 0 8px; font-size: 13px;">
+                    <option value="disease">Disease</option>
+                    <option value="medicine">Medicine</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="hospital">Hospital</option>
+                    <option value="date">Date</option>
+                    <option value="dosage">Dosage</option>
+                    <option value="lab_value">Lab Value</option>
+                    <option value="allergy">Allergy</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <input type="text" id="newEntityValue" class="input-field" placeholder="e.g. Paracetamol, Diabetes..." style="flex:1; height:36px; padding: 0 10px; font-size: 13px;">
+                  <button class="btn btn-outline" onclick="uploader.addCustomEntity()" style="height:36px; padding: 0 12px; font-size: 13px;">Add</button>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:12px; margin-top:24px;">
+                <button class="btn btn-outline" style="flex:1;" onclick="uploader.reset()">Discard</button>
+                <button class="btn btn-primary" id="confirmSaveBtn" style="flex:2;" onclick="uploader.saveVerification()">Confirm & Save to History</button>
+              </div>
             </div>
           </div>
         </div>
@@ -341,6 +366,19 @@
               <div class="settings-item"><div class="settings-item-icon">🔐</div><div class="settings-item-content"><div class="settings-item-label">Data Encryption</div><div class="settings-item-sub">AES-256 end-to-end encrypted</div></div><span class="enc-badge">✓ AES-256 Encrypted</span></div>
             </div>
           </div>
+          <div class="settings-section">
+            <div class="settings-section-title" style="color: var(--color-risk-high);">Danger Zone</div>
+            <div class="settings-card" style="border-color: rgba(239, 68, 68, 0.2);">
+              <div class="settings-item">
+                <div class="settings-item-icon">⚠️</div>
+                <div class="settings-item-content">
+                  <div class="settings-item-label" style="color: var(--color-risk-high);">Delete Account</div>
+                  <div class="settings-item-sub">Permanently delete your profile and all medical records</div>
+                </div>
+                <button class="btn btn-danger" onclick="app.deleteAccount()" style="padding: 8px 16px; font-size: 13px;">Delete Account</button>
+              </div>
+            </div>
+          </div>
         </div>
 
       </main>
@@ -459,16 +497,16 @@
   <div id="toast" style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--color-primary);color:#fff;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:500;z-index:300;opacity:0;transition:all 300ms ease;white-space:nowrap;box-shadow:0 8px 32px rgba(10,37,64,0.3);pointer-events:none;">✓ Saved successfully</div>
 
   <!-- JS Logic Modules -->
-  <script src="assets/js/config.js"></script>
-  <script src="assets/js/api.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/charts.js"></script>
-  <script src="assets/js/upload.js"></script>
-  <script src="assets/js/family.js"></script>
-  <script src="assets/js/risk.js"></script>
-  <script src="assets/js/records.js"></script>
-  <script src="assets/js/recommendations.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/config.js?v=1.0.2"></script>
+  <script src="assets/js/api.js?v=1.0.2"></script>
+  <script src="assets/js/auth.js?v=1.0.2"></script>
+  <script src="assets/js/charts.js?v=1.0.2"></script>
+  <script src="assets/js/upload.js?v=1.0.2"></script>
+  <script src="assets/js/family.js?v=1.0.2"></script>
+  <script src="assets/js/risk.js?v=1.0.2"></script>
+  <script src="assets/js/records.js?v=1.0.2"></script>
+  <script src="assets/js/recommendations.js?v=1.0.2"></script>
+  <script src="assets/js/app.js?v=1.0.2"></script>
 
 </body>
 </html>

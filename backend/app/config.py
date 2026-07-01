@@ -77,6 +77,8 @@ class Settings(BaseSettings):
     AWS_REGION: str = "ap-south-1"
     AWS_BUCKET_NAME: str = "genhealth-records"
     S3_ENDPOINT_URL: Optional[str] = "http://localhost:9000"  # None for real AWS
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin123"
 
     # ─── Email ────────────────────────────────────────────────────────
     SENDGRID_API_KEY: Optional[str] = None

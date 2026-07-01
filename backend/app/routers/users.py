@@ -103,6 +103,36 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail=err("User not found.", "USER_NOT_FOUND"))
 
+    # 1. Delete associated files from S3/MinIO
+    try:
+        from app.models.health_record import HealthRecord
+        from app.services.record_service import _get_s3_client
+        # Fetch keys of all records
+        records_res = await db.execute(select(HealthRecord.source_file_key).where(HealthRecord.owner_id == user_id))
+        s3_keys = [k for k in records_res.scalars().all() if k]
+        if s3_keys:
+            s3 = _get_s3_client()
+            for key in s3_keys:
+                try:
+                    s3.delete_object(Bucket=settings.AWS_BUCKET_NAME, Key=key)
+                    logger.info("Deleted S3 object: %s during user %s deletion", key, user_id)
+                except Exception as s3_exc:
+                    logger.warning("Failed to delete S3 object %s during user deletion: %s", key, s3_exc)
+    except Exception as exc:
+        logger.exception("Failed to delete S3 objects during user deletion: %s", exc)
+
+    # 2. Delete MongoDB collections
+    try:
+        from app.database import get_mongo_db
+        mongo_db = get_mongo_db()
+        # Delete user risk profiles
+        await mongo_db["risk_profiles"].delete_many({"user_id": str(user_id)})
+        # Delete user OCR results
+        await mongo_db["ocr_results"].delete_many({"owner_id": str(user_id)})
+        logger.info("Deleted MongoDB records for user %s during deletion", user_id)
+    except Exception as exc:
+        logger.exception("Failed to delete MongoDB data for user %s: %s", user_id, exc)
+
     await db.delete(user)
     logger.info("User %s deleted by %s.", user_id, current_user.id)
     return ok(message="Account deleted successfully.")

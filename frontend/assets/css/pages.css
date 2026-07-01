@@ -93,15 +93,20 @@
 .login-right {
   width: 480px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 48px;
+  justify-content: flex-start;
+  padding: 48px 24px;
   background: var(--color-surface);
+  overflow-y: auto;
+  min-height: 100vh;
 }
 
 .login-form-card {
   width: 100%;
   max-width: 380px;
+  margin: auto 0;
+  padding: 24px 0;
 }
 
 .login-logo {
@@ -782,6 +787,27 @@
   color: #8B5CF6;
 }
 
+.ext-chip-low-conf {
+  border: 2px solid var(--color-danger) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
+  animation: pulseLowConf 2s infinite ease-in-out;
+}
+
+@keyframes pulseLowConf {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+  }
+}
+
+.chip-confirm-btn:hover {
+  background: rgba(0, 196, 154, 0.1) !important;
+  border-radius: 4px;
+}
+
 @keyframes chipIn {
   from {
     opacity: 0;
@@ -1456,4 +1482,19 @@
 
 .family-node.hereditary {
   animation: nodesPulse 2.5s ease-in-out infinite;
+}
+
+/* Responsive Overrides to Fix Cascade Hierarchy */
+@media (max-width: 767px) {
+  #login-screen {
+    flex-direction: column !important;
+  }
+  .login-left {
+    display: none !important;
+  }
+  .login-right {
+    width: 100% !important;
+    padding: 32px 20px !important;
+    min-height: 100vh !important;
+  }
 }

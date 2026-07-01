@@ -59,6 +59,34 @@ def load_image(image_path: str) -> np.ndarray:
     return img
 
 
+def correct_orientation(image: np.ndarray) -> np.ndarray:
+    """
+    Detect and correct 90, 180, or 270 degrees page rotation using Tesseract OSD.
+    Returns the corrected image.
+    """
+    try:
+        import pytesseract
+        osd = pytesseract.image_to_osd(image)
+        angle = 0
+        for line in osd.split("\n"):
+            if "Orientation in degrees:" in line:
+                angle = int(line.split(":")[1].strip())
+                break
+        
+        if angle == 90:
+            logger.info("Auto-orientation: Rotating 90 degrees counter-clockwise to correct orientation.")
+            return cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        elif angle == 180:
+            logger.info("Auto-orientation: Rotating 180 degrees to correct orientation.")
+            return cv2.rotate(image, cv2.ROTATE_180)
+        elif angle == 270:
+            logger.info("Auto-orientation: Rotating 90 degrees clockwise to correct orientation.")
+            return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    except Exception as e:
+        logger.debug("Tesseract OSD orientation correction skipped: %s", e)
+    return image
+
+
 def to_grayscale(image: np.ndarray) -> np.ndarray:
     """Convert a BGR image to grayscale. No-op if already grayscale."""
     if len(image.shape) == 3 and image.shape[2] == 3:
@@ -236,6 +264,7 @@ def preprocess_image(image_path: str) -> np.ndarray:
     logger.info("Preprocessing image: %s", image_path)
 
     img = load_image(image_path)
+    img = correct_orientation(img)
     gray = to_grayscale(img)
     scaled = scale_to_min_dpi(gray)
     deskewed = deskew(scaled)
@@ -354,6 +383,7 @@ def preprocess_handwritten(image_path: str) -> np.ndarray:
         Processed binary numpy array.
     """
     img = load_image(image_path)
+    img = correct_orientation(img)
     gray = to_grayscale(img)
     scaled = scale_to_min_dpi(gray)
     deskewed = deskew(scaled)

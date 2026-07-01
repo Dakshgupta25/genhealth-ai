@@ -16,10 +16,23 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import JSONB
+
+@compiles(JSONB, "sqlite")
+def compile_jsonb_sqlite(element, compiler, **kw):
+    return "JSON"
 
 from app.database import Base, get_db, get_redis
 from app.main import app
+
+# Import all models to ensure they are registered on Base.metadata before create_all
 from app.models.user import User
+from app.models.family import FamilyMember
+from app.models.health_record import HealthRecord, ExtractedEntity
+from app.models.prescription import Prescription
+from app.models.risk_prediction import RiskPrediction
+from app.models.doctor import DoctorAccess, FamilyInvite
 from app.services.auth_service import hash_password, create_access_token
 
 
@@ -124,13 +137,13 @@ def auth_headers(user: User) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(db_session) -> User:
     """A verified patient user for use in tests."""
     return await create_test_user(db_session)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_doctor(db_session) -> User:
     """A doctor user for use in tests."""
     return await create_test_user(

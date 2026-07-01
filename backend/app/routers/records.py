@@ -153,6 +153,8 @@ async def verify_record(
     updated = await record_service.verify_record(
         record=record,
         corrections=body.corrections,
+        additions=body.additions,
+        deletions=body.deletions,
         structured_data=body.structured_data,
         db=db,
     )
@@ -174,4 +176,17 @@ async def delete_record(
         raise HTTPException(status_code=404, detail=err("Record not found.", "NOT_FOUND"))
 
     await record_service.delete_record(record, db)
+
+    # Trigger risk profile regeneration since a record has been deleted
+    try:
+        from app.celery_app import celery_app
+        celery_app.send_task(
+            "app.tasks.risk_tasks.compute_user_risk",
+            args=[str(current_user.id)],
+            queue="risk",
+        )
+        logger.info("Risk regeneration queued during record %s deletion for user %s", record_id, current_user.id)
+    except Exception as exc:
+        logger.exception("Failed to dispatch risk task during deletion: %s", exc)
+
     return ok(message="Record deleted.")

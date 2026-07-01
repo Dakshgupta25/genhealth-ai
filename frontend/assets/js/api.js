@@ -285,9 +285,13 @@ class GenHealthAPI {
     return await this.request('POST', '/upload/', formData, true);
   }
 
-  async verifyRecord(id, corrections = null, structuredData = null) {
-    // body: { corrections: [{entity_id, corrected_value}], structured_data: {} }
-    return await this.request('PATCH', `/records/${id}/verify`, { corrections, structured_data: structuredData });
+  async verifyRecord(id, corrections = null, additions = null, deletions = null, structuredData = null) {
+    return await this.request('PATCH', `/records/${id}/verify`, {
+      corrections,
+      additions,
+      deletions,
+      structured_data: structuredData
+    });
   }
 
   async getTimeline() {

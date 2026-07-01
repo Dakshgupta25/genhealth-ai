@@ -14,7 +14,7 @@ from sqlalchemy import select, and_, update
 
 from app.celery_app import celery_app
 from app.config import get_settings
-from app.database import _AsyncSessionLocal, init_pg_engine, init_mongo, get_mongo_db
+from app.database import get_session_maker, init_mongo, get_mongo_db
 from app.models.user import User
 from app.models.family import FamilyMember
 from app.models.health_record import HealthRecord, ExtractedEntity
@@ -40,9 +40,6 @@ def run_async(coro):
 
 def ensure_db_connections():
     """Ensure database connection factories are initialized for the worker process."""
-    global _AsyncSessionLocal
-    if _AsyncSessionLocal is None:
-        init_pg_engine()
     try:
         get_mongo_db()
     except RuntimeError:
@@ -54,7 +51,8 @@ async def async_compute_user_risk(user_id: str, disease_name: Optional[str] = No
     ensure_db_connections()
     user_uuid = UUID(user_id)
 
-    async with _AsyncSessionLocal() as session:
+    async_session = get_session_maker()
+    async with async_session() as session:
         # 1. Fetch user demographics
         user_res = await session.execute(select(User).where(User.id == user_uuid))
         user = user_res.scalar_one_or_none()
@@ -194,7 +192,8 @@ async def async_compute_user_risk(user_id: str, disease_name: Optional[str] = No
 async def async_refresh_all_risk_predictions() -> bool:
     """Iterate over all users in the platform and enqueue risk analysis tasks."""
     ensure_db_connections()
-    async with _AsyncSessionLocal() as session:
+    async_session = get_session_maker()
+    async with async_session() as session:
         result = await session.execute(select(User.id))
         user_ids = result.scalars().all()
         

@@ -629,6 +629,36 @@ class GenHealthApp {
     }
   }
 
+  async deleteAccount() {
+    const user = window.api.getUser();
+    if (!user) return;
+
+    const confirmMessage = `WARNING: Are you sure you want to permanently delete your account?\nAll your personal health records, family tree connections, and predictions will be deleted forever.\n\nType your email "${user.email}" to confirm:`;
+    const confirmation = prompt(confirmMessage);
+    if (confirmation !== user.email) {
+      if (confirmation !== null) {
+        this.showToast('⚠️ Email verification failed. Account deletion cancelled.');
+      }
+      return;
+    }
+
+    try {
+      this.showLoader(true);
+      const res = await window.api.request('DELETE', `/users/${user.id}`);
+      if (res.success) {
+        this.showToast('✓ Account deleted successfully.');
+        window.api.clearTokens();
+        setTimeout(() => {
+          window.location.hash = '#login';
+        }, 1500);
+      }
+    } catch (e) {
+      this.showToast(`❌ Deletion failed: ${e.message}`);
+    } finally {
+      this.showLoader(false);
+    }
+  }
+
   async handleLogout() {
     this.showLoader(true);
     try {

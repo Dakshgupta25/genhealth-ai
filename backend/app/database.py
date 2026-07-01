@@ -74,6 +74,13 @@ def init_pg_engine() -> None:
     logger.info("PostgreSQL engine initialized.")
 
 
+def get_session_maker() -> async_sessionmaker:
+    """Return the initialized PostgreSQL async session maker factory."""
+    if _AsyncSessionLocal is None:
+        init_pg_engine()
+    return _AsyncSessionLocal
+
+
 async def close_pg_engine() -> None:
     """Dispose the PostgreSQL connection pool gracefully."""
     global _pg_engine

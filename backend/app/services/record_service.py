@@ -46,6 +46,8 @@ def _get_s3_client():
     }
     if settings.use_minio:
         kwargs["endpoint_url"] = settings.S3_ENDPOINT_URL
+        kwargs["aws_access_key_id"] = settings.MINIO_ACCESS_KEY
+        kwargs["aws_secret_access_key"] = settings.MINIO_SECRET_KEY
 
     return boto3.client("s3", **kwargs)
 
@@ -135,6 +137,7 @@ async def create_record(
         extraction_status="pending",
         record_date=record_date,
     )
+    record.extracted_entities = []
     db.add(record)
     await db.flush()
     logger.info("Created HealthRecord %s (type=%s) for user %s.", record.id, record_type, owner_id)
@@ -205,6 +208,25 @@ async def list_records(
 
 async def delete_record(record: HealthRecord, db: AsyncSession) -> None:
     """Delete a health record and its associated entities."""
+    # 1. Delete associated file from S3 if present
+    if record.source_file_key:
+        try:
+            s3 = _get_s3_client()
+            s3.delete_object(Bucket=settings.AWS_BUCKET_NAME, Key=record.source_file_key)
+            logger.info("Deleted S3 object: %s", record.source_file_key)
+        except Exception as s3_exc:
+            logger.warning("Failed to delete S3 object %s: %s", record.source_file_key, s3_exc)
+
+    # 2. Delete MongoDB OCR results
+    try:
+        from app.database import get_mongo_db
+        mongo_db = get_mongo_db()
+        await mongo_db["ocr_results"].delete_many({"record_id": str(record.id)})
+        logger.info("Deleted MongoDB OCR results for record %s", record.id)
+    except Exception as mongo_exc:
+        logger.warning("Failed to delete MongoDB OCR results for record %s: %s", record.id, mongo_exc)
+
+    # 3. Delete SQL record
     await db.delete(record)
     await db.flush()
     logger.info("Deleted HealthRecord %s.", record.id)
@@ -215,6 +237,8 @@ async def delete_record(record: HealthRecord, db: AsyncSession) -> None:
 async def verify_record(
     record: HealthRecord,
     corrections: Optional[List[Dict[str, Any]]],
+    additions: Optional[List[Dict[str, Any]]],
+    deletions: Optional[List[str]],
     structured_data: Optional[Dict[str, Any]],
     db: AsyncSession,
 ) -> HealthRecord:
@@ -224,6 +248,8 @@ async def verify_record(
     Args:
         record:         The HealthRecord to verify.
         corrections:    List of {entity_id, corrected_value} dicts.
+        additions:      List of {entity_type, entity_value} dicts.
+        deletions:      List of entity_id strings to delete.
         structured_data: Optional merged structured data override.
         db:             Database session.
     """
@@ -233,6 +259,56 @@ async def verify_record(
     if structured_data:
         record.structured_data = {**(record.structured_data or {}), **structured_data}
 
+    # 1. Handle Deletions
+    if deletions:
+        from sqlalchemy import delete
+        deletion_uuids = [UUID(d_id) for d_id in deletions if not d_id.startswith("custom_")]
+        if deletion_uuids:
+            await db.execute(
+                delete(ExtractedEntity).where(
+                    and_(
+                        ExtractedEntity.id.in_(deletion_uuids),
+                        ExtractedEntity.record_id == record.id,
+                    )
+                )
+            )
+
+    # 2. Handle Additions
+    if additions:
+        for add in additions:
+            etype = add.get("entity_type", "other").lower()
+            val = add.get("entity_value", "").strip()
+            if not val:
+                continue
+
+            db_type = etype
+            if etype not in ["disease", "medicine", "dosage", "doctor", "hospital", "date", "test_result", "test_name", "symptom", "allergy", "other"]:
+                db_type = "other"
+
+            icd10 = None
+            atc = None
+            if db_type == "disease":
+                from ml.utils.medical_constants import ICD10_LOOKUP
+                icd10 = ICD10_LOOKUP.get(val.lower())
+            elif db_type == "medicine":
+                from ml.utils.medical_constants import BRAND_TO_GENERIC, ATC_LOOKUP
+                generic = BRAND_TO_GENERIC.get(val.lower(), val.lower())
+                atc = ATC_LOOKUP.get(generic, {}).get("atc_code")
+
+            new_entity = ExtractedEntity(
+                record_id=record.id,
+                entity_type=db_type,
+                entity_value=val,
+                confidence=1.0,
+                icd10_code=icd10,
+                atc_code=atc,
+                user_corrected=True,
+                corrected_value=val,
+                corrected_at=datetime.utcnow(),
+            )
+            db.add(new_entity)
+
+    # 3. Handle Corrections
     if corrections:
         entity_ids = [UUID(c["entity_id"]) for c in corrections]
         entity_result = await db.execute(
@@ -253,9 +329,54 @@ async def verify_record(
                 entity.corrected_at = datetime.utcnow()
                 db.add(entity)
 
+    # Flush entity edits first so they can be re-queried/synced correctly
     db.add(record)
     await db.flush()
-    logger.info("Record %s verified by user.", record.id)
+
+    # 4. Synchronize Prescription Model
+    if record.record_type == "prescription":
+        from app.models.prescription import Prescription
+        p_result = await db.execute(
+            select(Prescription).where(Prescription.record_id == record.id)
+        )
+        prescription = p_result.scalar_one_or_none()
+        if not prescription:
+            prescription = Prescription(record_id=record.id, owner_id=record.owner_id)
+            db.add(prescription)
+
+        # Retrieve all final entities
+        ent_result = await db.execute(
+            select(ExtractedEntity).where(ExtractedEntity.record_id == record.id)
+        )
+        all_entities = ent_result.scalars().all()
+
+        diseases = []
+        icd10_code = None
+        medicines = []
+
+        for ent in all_entities:
+            val = ent.corrected_value if ent.user_corrected else ent.entity_value
+            etype = ent.entity_type.lower()
+
+            if etype == "disease":
+                diseases.append(val)
+                if ent.icd10_code and not icd10_code:
+                    icd10_code = ent.icd10_code
+            elif etype == "medicine":
+                medicines.append({
+                    "name": val,
+                    "atc_code": ent.atc_code,
+                })
+
+        prescription.diagnosis = ", ".join(diseases)[:500] if diseases else None
+        prescription.icd10_code = icd10_code
+        prescription.doctor_name = None       # Not necessary for risk prediction
+        prescription.hospital_name = None     # Not necessary for risk prediction
+        prescription.medicines = medicines
+        db.add(prescription)
+
+    await db.flush()
+    logger.info("Record %s verified and synchronized by user.", record.id)
     return record
 
 

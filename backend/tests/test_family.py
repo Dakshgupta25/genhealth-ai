@@ -188,4 +188,4 @@ async def test_send_invite_no_contact(client: AsyncClient, test_user):
         headers=auth_headers(test_user),
     )
     assert invite_resp.status_code == 400
-    assert invite_resp.json()["code"] == "MISSING_CONTACT"
+    assert invite_resp.json()["detail"]["code"] == "MISSING_CONTACT"

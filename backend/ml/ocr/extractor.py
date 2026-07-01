@@ -82,7 +82,7 @@ class OCRExtractor:
         gpu: bool = False,
         use_handwriting: bool = False,
     ) -> None:
-        self.languages = languages or ["en", "hi"]
+        self.languages = languages or ["en"]
         self.gpu = gpu
         self.use_handwriting = use_handwriting
         self._easy_reader: Optional[Any] = None  # Lazy-initialized

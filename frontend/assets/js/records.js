@@ -214,9 +214,12 @@ class HealthRecordsManager {
             <div class="detail-field-label" style="margin-bottom:10px;">AI SURFACED DATA</div>
             ${entitiesHtml}
           </div>
-          <div style="margin-top: 24px; display:flex; gap:10px;">
-            <button class="btn btn-primary" style="flex:1;" onclick="records.downloadStub()">Download PDF</button>
-            <button class="btn btn-outline" onclick="records.shareStub()">Share Link</button>
+          <div style="margin-top: 24px; display:flex; gap:10px; flex-direction: column;">
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="records.downloadStub()">Download PDF</button>
+              <button class="btn btn-outline" style="flex:1;" onclick="records.shareStub()">Share Link</button>
+            </div>
+            <button class="btn btn-danger" style="width:100%;" onclick="records.deleteRecord('${rec.id}')">Delete Record</button>
           </div>
         `;
 
@@ -224,6 +227,31 @@ class HealthRecordsManager {
       }
     } catch (e) {
       window.app.showToast(`❌ Detail loading failed: ${e.message}`);
+    } finally {
+      window.app.showLoader(false);
+    }
+  }
+
+  async deleteRecord(recordId) {
+    if (!confirm('Are you sure you want to delete this health record? This will permanently remove the record and recalculate your health risk predictions.')) {
+      return;
+    }
+    try {
+      window.app.showLoader(true);
+      const res = await window.api.request('DELETE', `/records/${recordId}`);
+      if (res.success) {
+        window.app.showToast('✓ Record deleted successfully.');
+        document.getElementById('detailOverlay').classList.remove('active');
+        // Regenerate prediction models since a record has been deleted
+        try {
+          await window.api.generateRisk();
+        } catch (e) {
+          console.warn('Risk auto-generation failed', e);
+        }
+        await this.loadRecords(this.currentPage);
+      }
+    } catch (e) {
+      window.app.showToast(`❌ Deletion failed: ${e.message}`);
     } finally {
       window.app.showLoader(false);
     }

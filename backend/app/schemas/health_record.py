@@ -63,6 +63,14 @@ class RecordVerifyIn(BaseModel):
         default=None,
         description="List of {entity_id, corrected_value} dicts",
     )
+    additions: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="List of {entity_type, entity_value} dicts for custom additions",
+    )
+    deletions: Optional[List[str]] = Field(
+        default=None,
+        description="List of entity_ids to delete",
+    )
     structured_data: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Optional manually edited structured data to merge",

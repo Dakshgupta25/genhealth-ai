@@ -40,7 +40,7 @@ async def test_signup_duplicate_email(client: AsyncClient, db_session):
         "password": "SecurePass1",
     })
     assert response.status_code == 409
-    assert response.json()["code"] == "EMAIL_EXISTS"
+    assert response.json()["detail"]["code"] == "EMAIL_EXISTS"
 
 
 @pytest.mark.asyncio
@@ -79,7 +79,7 @@ async def test_login_wrong_password(client: AsyncClient, db_session):
         "password": "WrongPass1",
     })
     assert response.status_code == 401
-    assert response.json()["code"] == "INVALID_CREDENTIALS"
+    assert response.json()["detail"]["code"] == "INVALID_CREDENTIALS"
 
 
 @pytest.mark.asyncio
@@ -161,7 +161,7 @@ async def test_verify_email_invalid_otp(client: AsyncClient, test_user, mock_red
         "otp": "999999",  # Wrong OTP
     })
     assert response.status_code == 400
-    assert response.json()["code"] == "INVALID_OTP"
+    assert response.json()["detail"]["code"] == "INVALID_OTP"
 
 
 @pytest.mark.asyncio

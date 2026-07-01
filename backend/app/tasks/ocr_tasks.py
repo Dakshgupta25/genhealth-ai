@@ -11,11 +11,12 @@ from datetime import datetime, date
 from uuid import UUID
 
 import boto3
+import numpy as np
 from sqlalchemy import select, delete
 
 from app.celery_app import celery_app
 from app.config import get_settings
-from app.database import _AsyncSessionLocal, init_pg_engine, init_mongo, get_mongo_db
+from app.database import get_session_maker, init_mongo, get_mongo_db
 from app.models.health_record import HealthRecord, ExtractedEntity
 from app.models.prescription import Prescription
 
@@ -24,6 +25,22 @@ from ml.nlp.entity_extractor import get_entity_extractor
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+def clean_for_mongodb(obj):
+    """Recursively convert numpy types to native Python types for MongoDB BSON encoding."""
+    if isinstance(obj, dict):
+        return {k: clean_for_mongodb(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_for_mongodb(x) for x in obj]
+    elif isinstance(obj, (np.integer, np.int64, np.int32)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return clean_for_mongodb(obj.tolist())
+    else:
+        return obj
 
 
 def run_async(coro):
@@ -39,9 +56,6 @@ def run_async(coro):
 
 def ensure_db_connections():
     """Ensure database connection factories are initialized for the worker process."""
-    global _AsyncSessionLocal
-    if _AsyncSessionLocal is None:
-        init_pg_engine()
     try:
         get_mongo_db()
     except RuntimeError:
@@ -57,6 +71,8 @@ def download_file_from_s3(s3_key: str) -> bytes:
     }
     if settings.use_minio:
         kwargs["endpoint_url"] = settings.S3_ENDPOINT_URL
+        kwargs["aws_access_key_id"] = settings.MINIO_ACCESS_KEY
+        kwargs["aws_secret_access_key"] = settings.MINIO_SECRET_KEY
 
     s3 = boto3.client("s3", **kwargs)
     response = s3.get_object(Bucket=settings.AWS_BUCKET_NAME, Key=s3_key)
@@ -68,7 +84,8 @@ async def async_process_health_record(record_id: str, s3_key: str, ext: str) -> 
     ensure_db_connections()
     record_uuid = UUID(record_id)
 
-    async with _AsyncSessionLocal() as session:
+    async_session = get_session_maker()
+    async with async_session() as session:
         # 1. Fetch HealthRecord and update state to 'processing'
         result = await session.execute(select(HealthRecord).where(HealthRecord.id == record_uuid))
         record = result.scalar_one_or_none()
@@ -120,9 +137,8 @@ async def async_process_health_record(record_id: str, s3_key: str, ext: str) -> 
             await session.execute(delete(ExtractedEntity).where(ExtractedEntity.record_id == record_uuid))
             
             for ent in entities:
-                # Map entity type to valid lowercase schema values
                 raw_type = ent.get("type", "other").lower()
-                # Handle types not directly listed in schemas but returned by NLP
+
                 db_type = raw_type
                 if raw_type not in ["disease", "medicine", "dosage", "doctor", "hospital", "date", "test_result", "test_name", "symptom", "allergy", "other"]:
                     db_type = "other"
@@ -132,8 +148,8 @@ async def async_process_health_record(record_id: str, s3_key: str, ext: str) -> 
                     entity_type=db_type,
                     entity_value=ent.get("text") or ent.get("normalized") or "",
                     confidence=ent.get("confidence", 1.0),
-                    icd10_code=ent.get("icd10"),
-                    atc_code=ent.get("atc"),
+                    icd10_code=ent.get("icd10_code"),
+                    atc_code=ent.get("atc_code"),
                     start_index=ent.get("start"),
                     end_index=ent.get("end"),
                 )
@@ -150,9 +166,6 @@ async def async_process_health_record(record_id: str, s3_key: str, ext: str) -> 
                         icd10 = ent.get("icd10")
                         break
 
-                doctor_name = structured.get("doctor", {}).get("name") or None
-                hospital_name = structured.get("doctor", {}).get("hospital") or None
-                
                 # Retrieve first valid date as prescription date
                 presc_date = None
                 if structured.get("dates"):
@@ -162,13 +175,6 @@ async def async_process_health_record(record_id: str, s3_key: str, ext: str) -> 
                             break
                         except ValueError:
                             continue
-
-                follow_up_date = None
-                if structured.get("follow_up"):
-                    try:
-                        follow_up_date = datetime.strptime(structured.get("follow_up"), "%Y-%m-%d").date()
-                    except ValueError:
-                        pass
 
                 # Build notes
                 notes_lines = []
@@ -184,13 +190,22 @@ async def async_process_health_record(record_id: str, s3_key: str, ext: str) -> 
                 if not prescription:
                     prescription = Prescription(record_id=record_uuid, owner_id=record.owner_id)
 
+                # Filter medications to only keep name and atc_code
+                raw_meds = structured.get("medications", [])
+                filtered_meds = []
+                for med in raw_meds:
+                    filtered_meds.append({
+                        "name": med.get("name"),
+                        "atc_code": med.get("atc_code")
+                    })
+
                 prescription.diagnosis = diagnosis
                 prescription.icd10_code = icd10
-                prescription.doctor_name = doctor_name
-                prescription.hospital_name = hospital_name
+                prescription.doctor_name = None       # Not necessary for risk prediction
+                prescription.hospital_name = None     # Not necessary for risk prediction
                 prescription.prescription_date = presc_date
-                prescription.follow_up_date = follow_up_date
-                prescription.medicines = structured.get("medications", [])
+                prescription.follow_up_date = None    # Not necessary for risk prediction
+                prescription.medicines = filtered_meds
                 prescription.notes = notes
                 
                 session.add(prescription)
@@ -219,9 +234,9 @@ async def async_process_health_record(record_id: str, s3_key: str, ext: str) -> 
                         "record_id": record_id,
                         "owner_id": str(record.owner_id),
                         "raw_text": raw_text,
-                        "words": ocr_result.get("words", []),
-                        "overall_confidence": ocr_result.get("overall_confidence", 1.0),
-                        "processing_time_ms": ocr_result.get("processing_time_ms", 0),
+                        "words": clean_for_mongodb(ocr_result.get("words", [])),
+                        "overall_confidence": float(ocr_result.get("overall_confidence", 1.0)),
+                        "processing_time_ms": int(ocr_result.get("processing_time_ms", 0)),
                         "extracted_at": datetime.utcnow().isoformat()
                     }
                 },
